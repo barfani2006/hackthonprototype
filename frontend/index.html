@@ -1,1513 +1,1317 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Advanced Coal Mine Digital Twin</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coal Mine Digital Twin</title>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-<style>
-* {
-  box-sizing: border-box;
-}
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #07111f;
+      color: #e8f1ff;
+    }
 
-html,
-body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #050d16;
-  color: #e7f3ff;
-  font: 13px Inter, Segoe UI, Arial, sans-serif;
-}
+    button,
+    select,
+    input {
+      font: inherit;
+    }
 
-canvas {
-  display: block;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
+    button {
+      cursor: pointer;
+      border: 1px solid #35516d;
+      border-radius: 7px;
+      padding: 9px 13px;
+      color: #eaf5ff;
+      background: #16324a;
+    }
 
-#top {
-  position: fixed;
-  z-index: 10;
-  left: 300px;
-  right: 0;
-  top: 0;
-  height: 68px;
-  background: linear-gradient(90deg, #071522f5, #091b2bf2);
-  border-bottom: 1px solid #24445c;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  box-shadow: 0 5px 20px #0005;
-}
+    button:hover {
+      background: #24516d;
+    }
 
-#top h1 {
-  font-size: 19px;
-  line-height: 1;
-  margin: 0 18px 0 0;
-  white-space: nowrap;
-}
+    button:active {
+      transform: translateY(1px);
+    }
 
-#top h1 small {
-  display: block;
-  font-size: 10px;
-  color: #7e9db5;
-  font-weight: 400;
-  margin-top: 6px;
-  letter-spacing: .4px;
-}
+    button.danger {
+      background: #8e222b;
+      border-color: #ff6a6a;
+    }
 
-button,
-select {
-  background: #102b45;
-  color: #eaf5ff;
-  border: 1px solid #315a7a;
-  border-radius: 7px;
-  padding: 9px 11px;
-  cursor: pointer;
-  font-weight: 600;
-}
+    button.warning {
+      background: #8b5b12;
+      border-color: #e8b34e;
+    }
 
-button:hover {
-  border-color: #4fb7ff;
-  background: #164568;
-}
+    button.success {
+      background: #176344;
+      border-color: #43d99a;
+    }
 
-button.active {
-  background: #075ca8;
-  border-color: #40a9ff;
-  box-shadow: 0 0 15px #0077ff33;
-}
+    #app {
+      display: grid;
+      grid-template-columns: 285px 1fr 330px;
+      grid-template-rows: 68px 1fr 34px;
+      width: 100vw;
+      height: 100vh;
+    }
 
-button.danger {
-  background: #8f202b;
-  border-color: #e34a55;
-}
+    header {
+      grid-column: 1 / 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 0 18px;
+      background: #0c1c2e;
+      border-bottom: 1px solid #29435b;
+    }
 
-button.danger:hover {
-  background: #b62b38;
-}
+    header h1 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0.4px;
+    }
 
-button.warning {
-  background: #9a5b0a;
-  border-color: #ffc04d;
-}
+    header .subtitle {
+      margin-top: 4px;
+      color: #8faec8;
+      font-size: 12px;
+    }
 
-#left,
-#right {
-  position: fixed;
-  z-index: 8;
-  top: 80px;
-  bottom: 14px;
-  overflow: auto;
-  background: linear-gradient(180deg, #071522f5, #081522e8);
-  border: 1px solid #29485f;
-  border-radius: 10px;
-  padding: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 30px #0005;
-}
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
 
-#left {
-  left: 14px;
-  width: 272px;
-}
+    .status-pill {
+      padding: 7px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      background: #164b36;
+      border: 1px solid #38b982;
+      color: #aaffd8;
+    }
 
-#right {
-  right: 14px;
-  width: 300px;
-}
+    .status-pill.alarm {
+      background: #6f2027;
+      border-color: #ff7373;
+      color: #fff;
+    }
 
-h2 {
-  font-size: 12px;
-  color: #5fc0ff;
-  text-transform: uppercase;
-  letter-spacing: .6px;
-  margin: 12px 0 8px;
-}
+    aside {
+      min-width: 0;
+      overflow-y: auto;
+      background: #0a1828;
+      border-right: 1px solid #29435b;
+      padding: 15px;
+    }
 
-.metric,
-.node-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid #1d3447;
-  padding: 8px 0;
-}
+    aside.right {
+      border-right: 0;
+      border-left: 1px solid #29435b;
+    }
 
-.metric b {
-  color: #6ee7b7;
-}
+    .panel {
+      margin-bottom: 15px;
+      padding: 13px;
+      background: #102439;
+      border: 1px solid #29435b;
+      border-radius: 10px;
+    }
 
-.good {
-  color: #62e6a4;
-}
+    .panel h2 {
+      margin: 0 0 12px;
+      color: #b8d9f4;
+      font-size: 14px;
+      letter-spacing: 0.4px;
+    }
 
-.warn {
-  color: #ffe36a;
-}
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
 
-.bad {
-  color: #ff747c;
-}
+    .metric {
+      padding: 10px;
+      border-radius: 8px;
+      background: #0a1929;
+      border: 1px solid #223d56;
+    }
 
-.muted {
-  color: #8ea8bd;
-  font-size: 11px;
-}
+    .metric .label {
+      color: #89a9c4;
+      font-size: 11px;
+    }
 
-.pill {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  background: #12334c;
-  color: #8fd2ff;
-  font-size: 11px;
-  border: 1px solid #245979;
-}
+    .metric .value {
+      margin-top: 5px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #f1f8ff;
+    }
 
-.pill.bad-pill {
-  background: #5b1820;
-  color: #ff9ba1;
-  border-color: #b83b46;
-}
+    .metric .unit {
+      font-size: 10px;
+      color: #8faec8;
+    }
 
-.sector {
-  border: 1px solid #24435a;
-  border-left: 5px solid var(--c);
-  border-radius: 7px;
-  padding: 9px;
-  margin: 7px 0;
-  cursor: pointer;
-  background: #091d2c88;
-}
+    .control-row {
+      display: flex;
+      gap: 7px;
+      margin-top: 8px;
+    }
 
-.sector:hover,
-.sector.selected {
-  background: #123b59;
-  border-color: #3d78a1;
-}
+    .control-row button {
+      flex: 1;
+    }
 
-.sector b {
-  font-size: 12px;
-}
+    label {
+      display: block;
+      margin: 9px 0 5px;
+      color: #91b0ca;
+      font-size: 12px;
+    }
 
-.detail-title {
-  font-size: 18px;
-  font-weight: 800;
-  margin-bottom: 6px;
-}
+    select,
+    input {
+      width: 100%;
+      padding: 9px;
+      color: #eaf5ff;
+      background: #081725;
+      border: 1px solid #35516d;
+      border-radius: 7px;
+    }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px;
-}
+    #viewport {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, #17334a 0%, #091522 70%);
+    }
 
-.cell {
-  background: #0a1d2d;
-  border: 1px solid #1e3b51;
-  border-radius: 6px;
-  padding: 9px;
-}
+    #scene {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
 
-.cell span {
-  display: block;
-  color: #8ea8bd;
-  font-size: 10px;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-}
+    .scene-overlay {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      right: 15px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+    }
 
-.node-row {
-  cursor: pointer;
-  padding: 8px 4px;
-}
+    .overlay-box {
+      padding: 10px 12px;
+      background: rgba(5, 16, 28, 0.88);
+      border: 1px solid #35516d;
+      border-radius: 8px;
+      font-size: 12px;
+    }
 
-.node-row:hover {
-  background: #12304a;
-}
+    .overlay-box strong {
+      color: #7de4ff;
+    }
 
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 11px;
-  color: #a9c0d2;
-}
+    #node-popup {
+      position: absolute;
+      display: none;
+      z-index: 10;
+      width: 285px;
+      max-width: calc(100% - 20px);
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(8, 20, 34, 0.98);
+      border: 1px solid #5d8caf;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    }
 
-.dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 4px;
-}
+    #node-popup.visible {
+      display: block;
+    }
 
-#hint {
-  position: fixed;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 7;
-  background: #071523e8;
-  border: 1px solid #29465d;
-  border-radius: 20px;
-  padding: 9px 16px;
-  color: #a8c1d4;
-  box-shadow: 0 4px 15px #0004;
-}
+    #node-popup h3 {
+      margin: 0 0 8px;
+      color: #7de4ff;
+      font-size: 16px;
+    }
 
-#emergencyBanner {
-  display: none;
-  position: fixed;
-  z-index: 20;
-  top: 78px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #8f202b;
-  border: 2px solid #ff737d;
-  color: white;
-  padding: 12px 22px;
-  border-radius: 8px;
-  font-weight: 800;
-  box-shadow: 0 0 25px #ff263855;
-  animation: emergencyPulse 1s infinite alternate;
-}
+    #node-popup .popup-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 7px 0;
+      font-size: 12px;
+      border-bottom: 1px solid #233b50;
+      padding-bottom: 6px;
+    }
 
-@keyframes emergencyPulse {
-  from {
-    opacity: .75;
-  }
+    #node-popup .popup-line span:first-child {
+      color: #91b0ca;
+    }
 
-  to {
-    opacity: 1;
-  }
-}
+    #node-popup .popup-line span:last-child {
+      color: #f3f8ff;
+      font-weight: bold;
+      text-align: right;
+    }
 
-#left button,
-#right button {
-  margin: 3px 3px 0 0;
-}
+    #popup-message {
+      margin: 10px 0;
+      padding: 9px;
+      border-radius: 6px;
+      background: #132c40;
+      color: #b8eaff;
+      font-size: 12px;
+      line-height: 1.45;
+    }
 
-#typeFilter {
-  background: #0d2437;
-}
+    #popup-message.fault {
+      background: #542126;
+      color: #ffd0d0;
+      border: 1px solid #a94b52;
+    }
 
-#right h2:first-child {
-  margin-top: 0;
-}
+    .popup-actions {
+      display: flex;
+      gap: 7px;
+      margin-top: 10px;
+    }
 
-.section-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #62c5ff;
-  font-weight: 800;
-  font-size: 12px;
-  margin: 10px 0;
-}
+    .popup-actions button {
+      flex: 1;
+      font-size: 12px;
+    }
 
-@media(max-width:1050px) {
-  #left {
-    width: 245px;
-  }
+    #event-log {
+      max-height: 240px;
+      overflow-y: auto;
+      font-size: 11px;
+    }
 
-  #right {
-    width: 270px;
-  }
+    .log-entry {
+      padding: 8px 0;
+      border-bottom: 1px solid #223d56;
+      line-height: 1.4;
+    }
 
-  #top {
-    left: 270px;
-  }
+    .log-time {
+      color: #6e9ab9;
+      margin-right: 6px;
+    }
 
-  #top h1 {
-    font-size: 16px;
-  }
+    .log-entry.warning {
+      color: #ffd27b;
+    }
 
-  #top button {
-    padding: 7px;
-  }
-}
-</style>
+    .log-entry.danger {
+      color: #ff9b9b;
+    }
+
+    .log-entry.success {
+      color: #8ff0bd;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      font-size: 11px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #9ab8cf;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #48e29a;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .legend-dot.warning {
+      background: #ffcb55;
+    }
+
+    .legend-dot.fault {
+      background: #ff5252;
+    }
+
+    .legend-dot.selected {
+      background: #7ddcff;
+    }
+
+    footer {
+      grid-column: 1 / 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: #7292ad;
+      background: #081521;
+      border-top: 1px solid #29435b;
+      font-size: 11px;
+    }
+
+    .small-note {
+      color: #7595af;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1050px) {
+      #app {
+        grid-template-columns: 235px 1fr;
+        grid-template-rows: 68px 1fr 34px;
+      }
+
+      aside.right {
+        display: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      #app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      header {
+        min-height: 68px;
+      }
+
+      aside {
+        display: none;
+      }
+
+      #viewport {
+        flex: 1;
+        min-height: 0;
+      }
+
+      footer {
+        min-height: 34px;
+      }
+
+      header h1 {
+        font-size: 15px;
+      }
+
+      .header-right .status-pill {
+        display: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
-
-<div id="top">
-  <h1>
-    ⛏ Coal Mine Digital Twin
-    <small>Simulation Mode · Real-time Monitoring</small>
-  </h1>
-
-  <button class="active" id="view3d">◉ 3D View</button>
-  <button id="allLevels">▦ All Levels</button>
-  <button id="surface">Surface</button>
-  <button id="underground">Underground</button>
-  <button id="labels">Labels</button>
-
-  <span style="flex:1"></span>
-
-  <span class="pill" id="livePill">● LIVE · Simulation</span>
-  <button onclick="togglePause()" id="pauseButton">Ⅱ</button>
-  <button class="danger" onclick="toggleAlarm()" id="emergencyButton">
-    Emergency
-  </button>
-</div>
-
-<div id="emergencyBanner">
-  ⚠ EMERGENCY SIMULATION ACTIVE — CHECK FAULTED NODE DATA
-</div>
-
-<aside id="left">
-  <h2>Mine overview</h2>
-
-  <div class="metric">
-    <span>Sectors</span>
-    <b id="sectorCount">6</b>
-  </div>
-
-  <div class="metric">
-    <span>Sensor nodes</span>
-    <b id="nodeCount">48</b>
-  </div>
-
-  <div class="metric">
-    <span>Active nodes</span>
-    <b class="good" id="activeNodes">48</b>
-  </div>
-
-  <div class="metric">
-    <span>Faulted nodes</span>
-    <b class="bad" id="faultCount">0</b>
-  </div>
-
-  <div class="metric">
-    <span>Equipment</span>
-    <b>8</b>
-  </div>
-
-  <div class="metric">
-    <span>Production</span>
-    <b id="production">250.0 t</b>
-  </div>
-
-  <h2>Sectors</h2>
-  <div id="sectors"></div>
-
-  <h2>Filters</h2>
-
-  <select id="typeFilter" style="width:100%">
-    <option value="all">All node types</option>
-    <option value="environment">Environmental</option>
-    <option value="equipment">Equipment</option>
-    <option value="gateway">Gateway</option>
-  </select>
-
-  <h2>Quick actions</h2>
-
-  <button onclick="fitView()">Fit all</button>
-  <button onclick="toggleNetwork()">Toggle network</button>
-  <button onclick="toggleLabels()">Toggle labels</button>
-  <button onclick="clearAllFaults()" class="warning">
-    Clear all faults
-  </button>
-
-  <h2>Legend</h2>
-
-  <div class="legend">
-    <span>
-      <i class="dot" style="background:#22d3ee"></i>
-      Utilities
-    </span>
-
-    <span>
-      <i class="dot" style="background:#3b82f6"></i>
-      Plant
-    </span>
-
-    <span>
-      <i class="dot" style="background:#a855f7"></i>
-      UG L1
-    </span>
-
-    <span>
-      <i class="dot" style="background:#f97316"></i>
-      UG L2
-    </span>
-
-    <span>
-      <i class="dot" style="background:#84cc16"></i>
-      Open cast
-    </span>
-
-    <span>
-      <i class="dot" style="background:#ff303c"></i>
-      Fault
-    </span>
-  </div>
-</aside>
-
-<aside id="right">
-  <h2>Selected node</h2>
-
-  <div id="detail">
-    <div class="muted">
-      Select any colored node in the 3D map or choose a node below.
-    </div>
-  </div>
-
-  <h2>Sector nodes</h2>
-  <div id="nodes"></div>
-</aside>
-
-<div id="hint">
-  Drag to orbit · wheel to zoom · click a node to inspect its data
-</div>
-
-<script>
-let scene;
-let camera;
-let renderer;
-let controls;
-
-let raycaster = new THREE.Raycaster();
-let mouse = new THREE.Vector2();
-
-let paused = false;
-let alarm = false;
-let showLabels = true;
-let network = true;
-
-let selectedSector = 'S1';
-let selectedNodeId = null;
-
-let nodeObjects = [];
-let labelObjects = [];
-let sectorGroups = {};
-let networkLines = [];
-
-let faults = {};
-
-const sectors = [
-  {
-    id: 'S1',
-    name: 'Open Cast',
-    color: 0x84cc16,
-    hex: '#84cc16',
-    level: 'Surface',
-    center: [-42, -30, 18],
-    count: 8
-  },
-  {
-    id: 'S2',
-    name: 'Processing Plant',
-    color: 0x3b82f6,
-    hex: '#3b82f6',
-    level: 'Surface',
-    center: [55, -28, 8],
-    count: 6
-  },
-  {
-    id: 'S3',
-    name: 'Stockpile & Loadout',
-    color: 0xfacc15,
-    hex: '#facc15',
-    level: 'Surface',
-    center: [62, -29, 48],
-    count: 5
-  },
-  {
-    id: 'S4',
-    name: 'Underground L1',
-    color: 0xa855f7,
-    hex: '#a855f7',
-    level: 'Underground L1',
-    center: [0, -12, -35],
-    count: 10
-  },
-  {
-    id: 'S5',
-    name: 'Underground L2',
-    color: 0xf97316,
-    hex: '#f97316',
-    level: 'Underground L2',
-    center: [0, -28, -35],
-    count: 10
-  },
-  {
-    id: 'S6',
-    name: 'Utilities & Services',
-    color: 0x22d3ee,
-    hex: '#22d3ee',
-    level: 'Services',
-    center: [85, -20, -35],
-    count: 9
-  }
-];
-
-const $ = id => document.getElementById(id);
-
-function isFaulted(id) {
-  return Boolean(faults[id]);
-}
-
-function getNodeStatus(id) {
-  return isFaulted(id) ? 'Fault' : 'Online';
-}
-
-function getNodeData(node) {
-  const id = node.name;
-  const index = node.userData.index;
-  const faulted = isFaulted(id);
-
-  return {
-    methane: faulted
-      ? 4.8 + index * 0.15
-      : 0.25 + index * 0.03,
-
-    temperature: faulted
-      ? 48 + index * 1.2
-      : 26 + index * 0.4,
-
-    humidity: faulted
-      ? 88 + index * 0.4
-      : 61 + index,
-
-    signal: faulted
-      ? -96 - index
-      : -58 - index,
-
-    battery: faulted
-      ? 19 - index
-      : 87 - index
-  };
-}
-
-function mat(color, emissive = 0) {
-  return new THREE.MeshStandardMaterial({
-    color: color,
-    roughness: .8,
-    emissive: emissive
-  });
-}
-
-function cube(name, x, y, z, a, b, c, color, group) {
-  const object = new THREE.Mesh(
-    new THREE.BoxGeometry(a, b, c),
-    mat(color)
-  );
-
-  object.position.set(x, y, z);
-  object.name = name;
-
-  if (group) {
-    group.add(object);
-  } else {
-    scene.add(object);
-  }
-
-  return object;
-}
-
-function line(x1, y1, z1, x2, y2, z2, color = 0x78909c) {
-  const geometry = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(x1, y1, z1),
-    new THREE.Vector3(x2, y2, z2)
-  ]);
-
-  const lineObject = new THREE.Line(
-    geometry,
-    new THREE.LineBasicMaterial({
-      color: color
-    })
-  );
-
-  scene.add(lineObject);
-  networkLines.push(lineObject);
-
-  return lineObject;
-}
-
-function label(
-  text,
-  x,
-  y,
-  z,
-  color = '#d7e8f5'
-) {
-  const canvas = document.createElement('canvas');
-
-  canvas.width = 512;
-  canvas.height = 64;
-
-  const context = canvas.getContext('2d');
-
-  context.font = 'bold 27px Arial';
-  context.fillStyle = color;
-  context.strokeStyle = '#07111b';
-  context.lineWidth = 6;
-
-  context.strokeText(text, 8, 42);
-  context.fillText(text, 8, 42);
-
-  const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: new THREE.CanvasTexture(canvas),
-      transparent: true,
-      depthTest: false
-    })
-  );
-
-  sprite.position.set(x, y, z);
-
-  sprite.scale.set(
-    text.includes('N') ? 10 : 25,
-    text.includes('N') ? 1.6 : 3.2,
-    1
-  );
-
-  scene.add(sprite);
-  labelObjects.push(sprite);
-
-  return sprite;
-}
-
-function init() {
-  scene = new THREE.Scene();
-
-  scene.background = new THREE.Color(0x06101b);
-  scene.fog = new THREE.Fog(0x06101b, 220, 650);
-
-  camera = new THREE.PerspectiveCamera(
-    55,
-    innerWidth / innerHeight,
-    .1,
-    1400
-  );
-
-  camera.position.set(155, 125, 175);
-
-  renderer = new THREE.WebGLRenderer({
-    antialias: true
-  });
-
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.shadowMap.enabled = true;
-
-  document.body.appendChild(renderer.domElement);
-
-  controls = new THREE.OrbitControls(
-    camera,
-    renderer.domElement
-  );
-
-  controls.target.set(0, -15, 0);
-
-  scene.add(
-    new THREE.AmbientLight(0x9bb6cc, 1.8)
-  );
-
-  const sun = new THREE.DirectionalLight(
-    0xffffff,
-    2.2
-  );
-
-  sun.position.set(100, 160, 90);
-  scene.add(sun);
-
-  cube(
-    'surface',
-    0,
-    -38,
-    0,
-    260,
-    2,
-    220,
-    0x344338
-  );
-
-  for (let r = 0; r < 5; r++) {
-    const geometry = new THREE.RingGeometry(
-      18 + r * 14,
-      19 + r * 14,
-      64
-    );
-
-    const material = new THREE.MeshBasicMaterial({
-      color: 0x718b72,
-      transparent: true,
-      opacity: .22,
-      side: THREE.DoubleSide
-    });
-
-    const ring = new THREE.Mesh(
-      geometry,
-      material
-    );
-
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(-35, -36.8, 25);
-
-    scene.add(ring);
-  }
-
-  cube('pit', -35, -25, 25, 125, 20, 85, 0x55412f);
-
-  for (let i = 0; i < 7; i++) {
-    cube(
-      'bench',
-      -35,
-      -14 - i * 3.5,
-      25,
-      130 - i * 14,
-      1.2,
-      90 - i * 11,
-      0x765a3d
-    );
-
-    line(
-      -95 + i * 2,
-      -13 - i * 3.5,
-      -20,
-      25 - i * 2,
-      -13 - i * 3.5,
-      -20,
-      0x9b7954
-    );
-  }
-
-  cube('haul', 0, -36.7, -5, 240, .5, 13, 0x1b252b);
-  cube('east', 75, -36.5, 35, 12, .5, 100, 0x1b252b);
-  cube('plantpad', 55, -35.5, 8, 48, .6, 40, 0x4c5961);
-  cube('stockpad', 65, -35.5, 48, 44, .6, 34, 0x4c4030);
-  cube('shaft', -72, -3, -30, 12, 68, 12, 0x202c35);
-  cube('plant', 55, -18, 8, 30, 32, 26, 0x65727b);
-  cube('stock', 65, -20, 48, 30, 14, 30, 0x4c4030);
-
-  for (let i = 0; i < 4; i++) {
-    cube(
-      'building',
-      35 + i * 10,
-      -29,
-      -5,
-      8,
-      12,
-      10,
-      0x7b8790
-    );
-  }
-
-  for (let i = 0; i < 6; i++) {
-    cube(
-      'tunnel',
-      -65 + i * 26,
-      -18,
-      -38,
-      5,
-      5,
-      118,
-      0x1d2c3a
-    );
-
-    cube(
-      'cross',
-      0,
-      -18,
-      -38 + i * 15,
-      118,
-      5,
-      5,
-      0x1d2c3a
-    );
-  }
-
-  for (let x = -120; x <= 120; x += 20) {
-    line(
-      x,
-      -36.2,
-      -105,
-      x,
-      -36.2,
-      105,
-      0x40534a
-    );
-  }
-
-  for (let z = -100; z <= 100; z += 20) {
-    line(
-      -125,
-      -36.2,
-      z,
-      125,
-      -36.2,
-      z,
-      0x40534a
-    );
-  }
-
-  label(
-    'SHAFT / HOIST',
-    -72,
-    34,
-    -30,
-    '#ffd27a'
-  );
-
-  label(
-    'PROCESSING PLANT',
-    55,
-    2,
-    8,
-    '#bfe5ff'
-  );
-
-  label(
-    'STOCKPILE & LOADOUT',
-    65,
-    -4,
-    48,
-    '#ffd27a'
-  );
-
-  label(
-    'MAIN HAUL ROAD',
-    0,
-    -34,
-    -5
-  );
-
-  createSectors();
-  renderSectors();
-  animate();
-}
-
-function createSectors() {
-  sectors.forEach(sector => {
-    const group = new THREE.Group();
-
-    group.name = sector.id;
-    sectorGroups[sector.id] = group;
-
-    scene.add(group);
-
-    const [
-      centerX,
-      centerY,
-      centerZ
-    ] = sector.center;
-
-    const pad = cube(
-      'sector-pad',
-      centerX,
-      centerY,
-      centerZ,
-      sector.id === 'S4' || sector.id === 'S5'
-        ? 105
-        : 48,
-      1.0,
-      sector.id === 'S4' || sector.id === 'S5'
-        ? 34
-        : 28,
-      sector.color,
-      group
-    );
-
-    pad.material.transparent = true;
-    pad.material.opacity = .16;
-
-    for (let i = 0; i < sector.count; i++) {
-      const x =
-        centerX +
-        ((i % 5) - 2) * 13 +
-        (sector.id === 'S1' ? i * 2 : 0);
-
-      const z =
-        centerZ +
-        (Math.floor(i / 5) - 1) * 10;
-
-      const y = centerY + 4;
-
-      const node = new THREE.Mesh(
-        new THREE.SphereGeometry(2.1, 16, 16),
-        mat(sector.color)
-      );
-
-      node.position.set(x, y, z);
-
-      node.name =
-        sector.id +
-        '-N' +
-        String(i + 1).padStart(2, '0');
-
-      node.userData = {
-        sector: sector.id,
-        index: i,
-        type:
-          i % 4 === 0
-            ? 'gateway'
-            : i % 3 === 0
-              ? 'equipment'
-              : 'environment',
-        baseColor: sector.color
-      };
-
-      group.add(node);
-      nodeObjects.push(node);
-
-      if (network && i > 0) {
-        const previousNode =
-          group.children[group.children.length - 2];
-
-        if (previousNode.isMesh) {
-          line(
-            previousNode.position.x,
-            previousNode.position.y,
-            previousNode.position.z,
-            x,
-            y,
-            z,
-            sector.color
-          );
-        }
-      }
-
-      label(
-        node.name,
-        x,
-        y + 4,
-        z,
-        sector.hex
-      );
-    }
-
-    label(
-      sector.id + ' · ' + sector.name,
-      centerX,
-      centerY + 10,
-      centerZ,
-      sector.hex
-    );
-  });
-}
-
-function renderSectors() {
-  $('sectors').innerHTML = sectors.map(sector => {
-    return `
-      <div
-        class="sector ${sector.id === selectedSector ? 'selected' : ''}"
-        style="--c:${sector.hex}"
-        onclick="selectSector('${sector.id}')"
-      >
-        <b>${sector.id} · ${sector.name}</b>
-        <div class="muted">
-          ${sector.level} · ${sector.count} nodes
+  <div id="app">
+    <header>
+      <div>
+        <h1>Coal Mine Digital Twin</h1>
+        <div class="subtitle">
+          Simulation-only environment · No physical equipment control
         </div>
       </div>
-    `;
-  }).join('');
 
-  const sector = sectors.find(
-    item => item.id === selectedSector
-  );
-
-  const filter = $('typeFilter').value;
-
-  const visibleNodes = Array.from(
-    { length: sector.count },
-    (_, index) => {
-      const id =
-        sector.id +
-        '-N' +
-        String(index + 1).padStart(2, '0');
-
-      const type =
-        index % 4 === 0
-          ? 'gateway'
-          : index % 3 === 0
-            ? 'equipment'
-            : 'environment';
-
-      return {
-        id,
-        type,
-        faulted: isFaulted(id)
-      };
-    }
-  ).filter(item => {
-    return filter === 'all' || item.type === filter;
-  });
-
-  $('nodes').innerHTML = visibleNodes.map(node => {
-    const status = node.faulted ? 'Fault' : 'Online';
-    const statusClass = node.faulted ? 'bad' : 'good';
-
-    return `
-      <div
-        class="node-row"
-        onclick="selectNode('${node.id}')"
-      >
-        <span>
-          ${node.id}
-          <br>
-          <small class="muted">
-            ${node.type} node
-          </small>
-        </span>
-
-        <b class="${statusClass}">
-          ${status}
-        </b>
+      <div class="header-right">
+        <div id="connection-status" class="status-pill">
+          ● Simulation Online
+        </div>
+        <button id="emergency-button" class="danger">
+          Activate Emergency
+        </button>
+        <button id="reset-button">
+          Reset Simulation
+        </button>
       </div>
-    `;
-  }).join('');
+    </header>
 
-  updateOverview();
-}
+    <aside>
+      <div class="panel">
+        <h2>Mine Overview</h2>
 
-function updateOverview() {
-  const totalFaults = Object.keys(faults).length;
-  const totalNodes = nodeObjects.length;
+        <div class="metric-grid">
+          <div class="metric">
+            <div class="label">Air Quality</div>
+            <div id="air-quality" class="value">98<span class="unit">%</span></div>
+          </div>
 
-  $('faultCount').textContent = totalFaults;
-  $('activeNodes').textContent = totalNodes - totalFaults;
+          <div class="metric">
+            <div class="label">Methane</div>
+            <div id="methane" class="value">0.42<span class="unit">%</span></div>
+          </div>
 
-  if (totalFaults > 0) {
-    $('livePill').textContent = '● FAULT · Simulation';
-    $('livePill').classList.add('bad-pill');
-  } else {
-    $('livePill').textContent = '● LIVE · Simulation';
-    $('livePill').classList.remove('bad-pill');
-  }
-}
+          <div class="metric">
+            <div class="label">Temperature</div>
+            <div id="temperature" class="value">27<span class="unit">°C</span></div>
+          </div>
 
-function selectSector(id) {
-  selectedSector = id;
-
-  renderSectors();
-
-  const sector = sectors.find(
-    item => item.id === id
-  );
-
-  controls.target.set(...sector.center);
-
-  selectNode(id + '-N01');
-}
-
-function selectNode(id) {
-  const node = nodeObjects.find(
-    item => item.name === id
-  );
-
-  if (!node) {
-    return;
-  }
-
-  selectedNodeId = id;
-
-  nodeObjects.forEach(object => {
-    object.scale.setScalar(
-      object === node ? 1.8 : 1
-    );
-  });
-
-  const sector = sectors.find(
-    item => item.id === node.userData.sector
-  );
-
-  selectedSector = sector.id;
-
-  renderSectors();
-  renderNodeDetails(node);
-  focusNode(id);
-}
-
-function renderNodeDetails(node) {
-  const id = node.name;
-  const sector = sectors.find(
-    item => item.id === node.userData.sector
-  );
-
-  const faulted = isFaulted(id);
-  const status = getNodeStatus(id);
-  const data = getNodeData(node);
-
-  const statusClass = faulted ? 'bad' : 'good';
-  const statusText = faulted ? 'Fault' : 'Online';
-
-  $('detail').innerHTML = `
-    <div class="detail-title">
-      <span style="color:${faulted ? '#ff303c' : sector.hex}">
-        ●
-      </span>
-      ${id}
-    </div>
-
-    <span class="pill ${faulted ? 'bad-pill' : ''}">
-      ${sector.id} · ${sector.name}
-    </span>
-
-    <div class="grid" style="margin-top:10px">
-      <div class="cell">
-        <span>Node ID</span>
-        ${id}
+          <div class="metric">
+            <div class="label">Active Faults</div>
+            <div id="fault-count" class="value">0</div>
+          </div>
+        </div>
       </div>
 
-      <div class="cell">
-        <span>Status</span>
-        <b class="${statusClass}">
-          ${statusText}
-        </b>
+      <div class="panel">
+        <h2>Simulation Controls</h2>
+
+        <label for="scenario">Scenario</label>
+        <select id="scenario">
+          <option value="normal">Normal Operation</option>
+          <option value="methane">Methane Increase</option>
+          <option value="ventilation">Ventilation Failure</option>
+          <option value="power">Power Instability</option>
+          <option value="fire">Fire Risk</option>
+        </select>
+
+        <div class="control-row">
+          <button id="run-scenario" class="warning">
+            Run Scenario
+          </button>
+          <button id="clear-scenario">
+            Clear
+          </button>
+        </div>
+
+        <label for="speed">Simulation Speed</label>
+        <select id="speed">
+          <option value="1">1× Normal</option>
+          <option value="2">2× Fast</option>
+          <option value="5">5× Very Fast</option>
+        </select>
+
+        <p class="small-note">
+          All values are simulated. Emergency mode changes the digital twin
+          state only and does not operate real equipment.
+        </p>
       </div>
 
-      <div class="cell">
-        <span>Type</span>
-        ${node.userData.type}
+      <div class="panel">
+        <h2>Node Legend</h2>
+
+        <div class="legend">
+          <div class="legend-item">
+            <span class="legend-dot"></span>
+            Healthy
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-dot warning"></span>
+            Warning
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-dot fault"></span>
+            Fault
+          </div>
+
+          <div class="legend-item">
+            <span class="legend-dot selected"></span>
+            Selected
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main id="viewport">
+      <canvas id="scene"></canvas>
+
+      <div class="scene-overlay">
+        <div class="overlay-box">
+          <strong>LIVE DIGITAL TWIN</strong><br />
+          Sector S1 · Underground Level 1
+        </div>
+
+        <div class="overlay-box">
+          Nodes: <strong id="node-total">12</strong> ·
+          Faults: <strong id="overlay-faults">0</strong>
+        </div>
       </div>
 
-      <div class="cell">
-        <span>Position</span>
-        ${node.position.x.toFixed(1)},
-        ${node.position.y.toFixed(1)},
-        ${node.position.z.toFixed(1)}
+      <div id="node-popup">
+        <h3 id="popup-title">Node S1-N01</h3>
+
+        <div class="popup-line">
+          <span>Status</span>
+          <span id="popup-status">Healthy</span>
+        </div>
+
+        <div class="popup-line">
+          <span>Temperature</span>
+          <span id="popup-temperature">27 °C</span>
+        </div>
+
+        <div class="popup-line">
+          <span>Gas Level</span>
+          <span id="popup-gas">0.42 %</span>
+        </div>
+
+        <div class="popup-line">
+          <span>Battery</span>
+          <span id="popup-battery">98 %</span>
+        </div>
+
+        <div id="popup-message">
+          Node is operating within simulated normal limits.
+        </div>
+
+        <div class="popup-actions">
+          <button id="simulate-fault-button" class="danger">
+            Simulate Fault
+          </button>
+          <button id="repair-node-button" class="success">
+            Repair Node
+          </button>
+        </div>
+
+        <div class="popup-actions">
+          <button id="close-popup-button">
+            Close
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <aside class="right">
+      <div class="panel">
+        <h2>Selected Node</h2>
+
+        <div class="metric-grid">
+          <div class="metric">
+            <div class="label">Node ID</div>
+            <div id="selected-node" class="value" style="font-size:15px">
+              None
+            </div>
+          </div>
+
+          <div class="metric">
+            <div class="label">Node Status</div>
+            <div id="selected-status" class="value" style="font-size:15px">
+              —
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="cell">
-        <span>Methane</span>
-        <b class="${faulted ? 'bad' : 'good'}">
-          ${data.methane.toFixed(2)} %
-        </b>
+      <div class="panel">
+        <h2>Event Log</h2>
+        <div id="event-log"></div>
       </div>
 
-      <div class="cell">
-        <span>Temperature</span>
-        <b class="${faulted ? 'bad' : 'good'}">
-          ${data.temperature.toFixed(1)} °C
-        </b>
+      <div class="panel">
+        <h2>System Information</h2>
+        <div class="small-note">
+          <b>Mode:</b> Simulation only<br />
+          <b>Backend:</b> Optional API connection<br />
+          <b>Emergency:</b> Local digital-twin state<br />
+          <b>Physical control:</b> Disabled<br />
+          <b>Data:</b> Generated telemetry
+        </div>
       </div>
+    </aside>
 
-      <div class="cell">
-        <span>Humidity</span>
-        <b class="${faulted ? 'bad' : 'good'}">
-          ${data.humidity.toFixed(1)} %
-        </b>
-      </div>
+    <footer>
+      <span>Coal Mine Digital Twin · Demonstration System</span>
+      <span id="footer-state">Normal operation</span>
+    </footer>
+  </div>
 
-      <div class="cell">
-        <span>Signal</span>
-        <b class="${faulted ? 'bad' : 'good'}">
-          ${data.signal} dBm
-        </b>
-      </div>
+  <script>
+    /*
+      COMPLETE FRONTEND REPLACEMENT
 
-      <div class="cell">
-        <span>Battery</span>
-        <b class="${faulted ? 'bad' : 'good'}">
-          ${data.battery}%
-        </b>
-      </div>
+      This file intentionally does not contain the old message:
+      "Fault simulation requested... Backend remains simulation-only."
 
-      <div class="cell">
-        <span>Last update</span>
-        <b class="${faulted ? 'bad' : 'good'}">
-          ${faulted ? 'Now' : '2.4 s ago'}
-        </b>
-      </div>
-    </div>
+      Every node action updates:
+      - node status
+      - node popup
+      - selected-node panel
+      - event log
+      - fault count
+      - emergency state
+      - visual node color
+    */
 
-    <h2>Actions</h2>
+    const canvas = document.getElementById("scene");
+    const ctx = canvas.getContext("2d");
 
-    <button onclick="focusNode('${id}')">
-      View in 3D
-    </button>
+    const $ = (id) => document.getElementById(id);
 
-    <button
-      onclick="simulateFault('${id}')"
-      class="${faulted ? 'warning' : 'danger'}"
-    >
-      ${faulted ? 'Clear fault' : 'Simulate fault'}
-    </button>
-
-    ${
-      faulted
-        ? `
-          <p class="bad">
-            ⚠ Fault active on ${id}.
-            Sensor readings are outside normal limits.
-          </p>
-        `
-        : ''
-    }
-  `;
-
-  updateNodeVisual(node);
-}
-
-function updateNodeVisual(node) {
-  const faulted = isFaulted(node.name);
-
-  if (faulted) {
-    node.material.color.setHex(0xff303c);
-    node.material.emissive.setHex(0x660000);
-  } else {
-    node.material.color.setHex(
-      node.userData.baseColor
-    );
-
-    node.material.emissive.setHex(0x000000);
-  }
-}
-
-function focusNode(id) {
-  const node = nodeObjects.find(
-    item => item.name === id
-  );
-
-  if (node) {
-    const worldPosition = node.getWorldPosition(
-      new THREE.Vector3()
-    );
-
-    controls.target.copy(worldPosition);
-
-    camera.position.copy(
-      controls.target
-    ).add(
-      new THREE.Vector3(35, 25, 35)
-    );
-  }
-}
-
-function simulateFault(id) {
-  if (isFaulted(id)) {
-    delete faults[id];
-  } else {
-    faults[id] = {
-      createdAt: new Date().toLocaleTimeString()
+    const state = {
+      emergency: false,
+      scenario: "normal",
+      speed: 1,
+      selectedNode: null,
+      faults: 0,
+      time: 0,
+      nodes: [],
+      particles: []
     };
-  }
 
-  const node = nodeObjects.find(
-    item => item.name === id
-  );
+    const NODE_COUNT = 12;
 
-  if (node) {
-    updateNodeVisual(node);
-    renderNodeDetails(node);
-  }
-
-  updateEmergencyState();
-  renderSectors();
-}
-
-function updateEmergencyState() {
-  const hasFaults =
-    Object.keys(faults).length > 0;
-
-  if (hasFaults) {
-    alarm = true;
-  } else {
-    alarm = false;
-  }
-
-  $('emergencyBanner').style.display =
-    alarm ? 'block' : 'none';
-
-  $('emergencyButton').textContent =
-    alarm ? 'Clear emergency' : 'Emergency';
-
-  $('emergencyButton').className =
-    alarm ? 'warning' : 'danger';
-
-  updateOverview();
-}
-
-function clearAllFaults() {
-  faults = {};
-
-  nodeObjects.forEach(node => {
-    updateNodeVisual(node);
-  });
-
-  if (selectedNodeId) {
-    const node = nodeObjects.find(
-      item => item.name === selectedNodeId
-    );
-
-    if (node) {
-      renderNodeDetails(node);
+    function nowTime() {
+      return new Date().toLocaleTimeString();
     }
-  }
 
-  updateEmergencyState();
-  renderSectors();
-}
+    function log(message, type = "") {
+      const entry = document.createElement("div");
+      entry.className = "log-entry " + type;
 
-function togglePause() {
-  paused = !paused;
+      const time = document.createElement("span");
+      time.className = "log-time";
+      time.textContent = nowTime();
 
-  $('pauseButton').textContent =
-    paused ? '▶' : 'Ⅱ';
-}
+      entry.appendChild(time);
+      entry.appendChild(document.createTextNode(message));
 
-function toggleAlarm() {
-  if (Object.keys(faults).length > 0) {
-    clearAllFaults();
-    return;
-  }
+      $("event-log").prepend(entry);
 
-  alarm = !alarm;
+      while ($("event-log").children.length > 80) {
+        $("event-log").lastChild.remove();
+      }
+    }
 
-  $('emergencyBanner').style.display =
-    alarm ? 'block' : 'none';
+    function createNodes() {
+      state.nodes = [];
 
-  $('emergencyButton').textContent =
-    alarm ? 'Clear emergency' : 'Emergency';
+      for (let i = 0; i < NODE_COUNT; i++) {
+        const sector = i < 6 ? "S1" : "S2";
+        const number = String((i % 6) + 1).padStart(2, "0");
 
-  $('emergencyButton').className =
-    alarm ? 'warning' : 'danger';
-}
+        state.nodes.push({
+          id: `${sector}-N${number}`,
+          sector,
+          x: 0.12 + (i % 6) * 0.15,
+          y: i < 6 ? 0.35 : 0.68,
+          status: "Healthy",
+          temperature: 26 + Math.random() * 3,
+          gas: 0.35 + Math.random() * 0.2,
+          battery: 94 + Math.random() * 6,
+          faultReason: "",
+          pulse: Math.random() * Math.PI * 2
+        });
+      }
 
-function fitView() {
-  camera.position.set(155, 125, 175);
-  controls.target.set(0, -15, 0);
-}
+      $("node-total").textContent = state.nodes.length;
+    }
 
-function toggleLabels() {
-  showLabels = !showLabels;
+    function getSelectedNode() {
+      return state.nodes.find(
+        (node) => node.id === state.selectedNode
+      );
+    }
 
-  labelObjects.forEach(labelObject => {
-    labelObject.visible = showLabels;
-  });
-}
+    function statusColor(status) {
+      if (status === "Fault") return "#ff4d5d";
+      if (status === "Warning") return "#ffca55";
+      return "#42e39a";
+    }
 
-function toggleNetwork() {
-  network = !network;
+    function updateMetrics() {
+      const averageGas =
+        state.nodes.reduce((sum, node) => sum + node.gas, 0) /
+        state.nodes.length;
 
-  networkLines.forEach(networkLine => {
-    networkLine.visible = network;
-  });
-}
+      const averageTemperature =
+        state.nodes.reduce((sum, node) => sum + node.temperature, 0) /
+        state.nodes.length;
 
-function animate() {
-  requestAnimationFrame(animate);
+      const faultCount = state.nodes.filter(
+        (node) => node.status === "Fault"
+      ).length;
 
-  if (!paused) {
-    const time = performance.now() / 1000;
-    const faultCount = Object.keys(faults).length;
+      const warningCount = state.nodes.filter(
+        (node) => node.status === "Warning"
+      ).length;
 
-    const production =
-      250 +
-      Math.sin(time) * 18 -
-      faultCount * 22;
+      state.faults = faultCount;
 
-    $('production').textContent =
-      Math.max(0, production).toFixed(1) + ' t';
+      $("methane").innerHTML =
+        averageGas.toFixed(2) + '<span class="unit">%</span>';
 
-    nodeObjects.forEach(node => {
-      if (isFaulted(node.name)) {
-        const pulse =
-          0.5 +
-          Math.abs(Math.sin(time * 5)) * 0.5;
+      $("temperature").innerHTML =
+        averageTemperature.toFixed(1) + '<span class="unit">°C</span>';
 
-        node.material.emissiveIntensity = pulse;
-        node.scale.setScalar(
-          node.name === selectedNodeId
-            ? 1.8 + pulse * .3
-            : 1 + pulse * .15
-        );
+      $("fault-count").textContent = faultCount;
+      $("overlay-faults").textContent = faultCount;
+
+      const airQuality = Math.max(
+        0,
+        100 - averageGas * 8 - faultCount * 5 - warningCount * 2
+      );
+
+      $("air-quality").innerHTML =
+        airQuality.toFixed(0) + '<span class="unit">%</span>';
+
+      if (state.emergency) {
+        $("connection-status").textContent = "● Emergency Active";
+        $("connection-status").classList.add("alarm");
+        $("footer-state").textContent = "Emergency simulation active";
+      } else if (faultCount > 0) {
+        $("connection-status").textContent = "● Faults Detected";
+        $("connection-status").classList.add("alarm");
+        $("footer-state").textContent = "Fault condition detected";
       } else {
-        node.material.emissiveIntensity = 0;
+        $("connection-status").textContent = "● Simulation Online";
+        $("connection-status").classList.remove("alarm");
+        $("footer-state").textContent = "Normal operation";
+      }
+    }
+
+    function updateSelectedPanel() {
+      const node = getSelectedNode();
+
+      if (!node) {
+        $("selected-node").textContent = "None";
+        $("selected-status").textContent = "—";
+        return;
+      }
+
+      $("selected-node").textContent = node.id;
+      $("selected-status").textContent = node.status;
+      $("selected-status").style.color = statusColor(node.status);
+    }
+
+    function updatePopup() {
+      const node = getSelectedNode();
+
+      if (!node) {
+        $("node-popup").classList.remove("visible");
+        return;
+      }
+
+      $("popup-title").textContent = node.id;
+      $("popup-status").textContent = node.status;
+      $("popup-status").style.color = statusColor(node.status);
+      $("popup-temperature").textContent =
+        node.temperature.toFixed(1) + " °C";
+      $("popup-gas").textContent = node.gas.toFixed(2) + " %";
+      $("popup-battery").textContent =
+        node.battery.toFixed(0) + " %";
+
+      const message = $("popup-message");
+
+      if (node.status === "Fault") {
+        message.className = "fault";
+        message.textContent =
+          node.faultReason ||
+          "Simulated fault is active. Inspect the node and repair it.";
+      } else if (node.status === "Warning") {
+        message.className = "";
+        message.textContent =
+          "Warning condition detected in the simulation.";
+      } else {
+        message.className = "";
+        message.textContent =
+          "Node is operating within simulated normal limits.";
+      }
+
+      $("simulate-fault-button").disabled =
+        node.status === "Fault";
+
+      $("repair-node-button").disabled =
+        node.status === "Healthy";
+    }
+
+    function selectNode(node) {
+      state.selectedNode = node.id;
+      updateSelectedPanel();
+      updatePopup();
+
+      $("node-popup").classList.add("visible");
+
+      log(`Selected node ${node.id}.`);
+
+      positionPopup(node);
+    }
+
+    function positionPopup(node) {
+      const rect = canvas.getBoundingClientRect();
+
+      const x = rect.width * node.x;
+      const y = rect.height * node.y;
+
+      const popup = $("node-popup");
+      const popupWidth = popup.offsetWidth || 285;
+      const popupHeight = popup.offsetHeight || 260;
+
+      let left = x + 18;
+      let top = y - popupHeight / 2;
+
+      if (left + popupWidth > rect.width - 10) {
+        left = x - popupWidth - 18;
+      }
+
+      if (top < 10) top = 10;
+      if (top + popupHeight > rect.height - 10) {
+        top = rect.height - popupHeight - 10;
+      }
+
+      popup.style.left = Math.max(10, left) + "px";
+      popup.style.top = Math.max(10, top) + "px";
+    }
+
+    function simulateFault(node) {
+      if (!node) return;
+
+      node.status = "Fault";
+      node.faultReason =
+        `Simulated fault active on ${node.id}. ` +
+        `The node is isolated inside the digital twin.`;
+
+      node.temperature += 8;
+      node.gas += 0.45;
+      node.battery = Math.max(10, node.battery - 12);
+
+      log(
+        `${node.id}: simulated fault activated. ` +
+        `No physical equipment was affected.`,
+        "danger"
+      );
+
+      updateMetrics();
+      updateSelectedPanel();
+      updatePopup();
+    }
+
+    function repairNode(node) {
+      if (!node) return;
+
+      node.status = "Healthy";
+      node.faultReason = "";
+      node.temperature = 26 + Math.random() * 3;
+      node.gas = 0.35 + Math.random() * 0.2;
+      node.battery = Math.max(node.battery, 85);
+
+      log(
+        `${node.id}: simulated repair completed. Node returned to Healthy.`,
+        "success"
+      );
+
+      updateMetrics();
+      updateSelectedPanel();
+      updatePopup();
+    }
+
+    function activateEmergency() {
+      state.emergency = !state.emergency;
+
+      if (state.emergency) {
+        $("emergency-button").textContent = "Deactivate Emergency";
+        $("emergency-button").classList.remove("danger");
+        $("emergency-button").classList.add("warning");
+
+        log(
+          "Emergency simulation activated. Multiple digital-twin warnings generated.",
+          "danger"
+        );
+
+        state.nodes.forEach((node, index) => {
+          if (index % 4 === 0) {
+            node.status = "Warning";
+            node.faultReason = "";
+            node.gas += 0.25;
+            node.temperature += 3;
+          }
+        });
+      } else {
+        $("emergency-button").textContent = "Activate Emergency";
+        $("emergency-button").classList.remove("warning");
+        $("emergency-button").classList.add("danger");
+
+        log(
+          "Emergency simulation deactivated. Returning to normal simulation.",
+          "success"
+        );
+
+        state.nodes.forEach((node) => {
+          if (node.status === "Warning") {
+            node.status = "Healthy";
+            node.temperature = 26 + Math.random() * 3;
+            node.gas = 0.35 + Math.random() * 0.2;
+          }
+        });
+      }
+
+      updateMetrics();
+      updateSelectedPanel();
+      updatePopup();
+    }
+
+    function resetSimulation() {
+      state.emergency = false;
+      state.scenario = "normal";
+      state.selectedNode = null;
+      state.time = 0;
+
+      $("scenario").value = "normal";
+      $("emergency-button").textContent = "Activate Emergency";
+      $("emergency-button").className = "danger";
+      $("node-popup").classList.remove("visible");
+
+      createNodes();
+      updateMetrics();
+      updateSelectedPanel();
+
+      log("Simulation reset. All nodes returned to initial state.", "success");
+    }
+
+    function runScenario() {
+      const scenario = $("scenario").value;
+      state.scenario = scenario;
+
+      if (scenario === "normal") {
+        state.nodes.forEach((node) => {
+          if (node.status !== "Fault") {
+            node.status = "Healthy";
+            node.temperature = 26 + Math.random() * 3;
+            node.gas = 0.35 + Math.random() * 0.2;
+          }
+        });
+
+        log("Normal operation scenario started.", "success");
+      }
+
+      if (scenario === "methane") {
+        state.nodes.forEach((node, index) => {
+          node.gas += 0.6 + index * 0.03;
+          if (node.status !== "Fault") node.status = "Warning";
+        });
+
+        log(
+          "Methane increase scenario started. Warning levels generated.",
+          "warning"
+        );
+      }
+
+      if (scenario === "ventilation") {
+        state.nodes.forEach((node, index) => {
+          node.temperature += 4;
+          node.gas += 0.35;
+
+          if (index % 3 === 0 && node.status !== "Fault") {
+            node.status = "Warning";
+          }
+        });
+
+        log(
+          "Ventilation failure scenario started.",
+          "warning"
+        );
+      }
+
+      if (scenario === "power") {
+        state.nodes.forEach((node, index) => {
+          node.battery = Math.max(15, node.battery - 25);
+
+          if (index % 4 === 0 && node.status !== "Fault") {
+            node.status = "Warning";
+          }
+        });
+
+        log(
+          "Power instability scenario started.",
+          "warning"
+        );
+      }
+
+      if (scenario === "fire") {
+        const node = state.nodes[0];
+        node.status = "Fault";
+        node.faultReason =
+          "Simulated fire-risk event at this node. Digital-twin alert only.";
+        node.temperature += 20;
+        node.gas += 1.2;
+
+        log(
+          `Fire-risk scenario started at ${node.id}.`,
+          "danger"
+        );
+      }
+
+      updateMetrics();
+      updateSelectedPanel();
+      updatePopup();
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(rect.width * ratio);
+      canvas.height = Math.floor(rect.height * ratio);
+
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    function drawBackground(width, height) {
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.strokeStyle = "rgba(90, 142, 177, 0.15)";
+      ctx.lineWidth = 1;
+
+      const gridSize = 35;
+
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawMine(width, height) {
+      const left = width * 0.08;
+      const right = width * 0.92;
+      const centerY = height * 0.51;
+
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = "#355b72";
+      ctx.lineCap = "round";
+
+      ctx.beginPath();
+      ctx.moveTo(left, centerY);
+      ctx.lineTo(right, centerY);
+      ctx.stroke();
+
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#6c9bb5";
+
+      ctx.beginPath();
+      ctx.moveTo(left, centerY);
+      ctx.lineTo(width * 0.5, height * 0.22);
+      ctx.lineTo(right, centerY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(left, centerY);
+      ctx.lineTo(width * 0.5, height * 0.8);
+      ctx.lineTo(right, centerY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#8bb8d0";
+      ctx.font = "12px Arial";
+      ctx.fillText("SECTOR S1", left, centerY - 20);
+      ctx.fillText("SECTOR S2", left, centerY + 35);
+    }
+
+    function drawNode(node, width, height) {
+      const x = width * node.x;
+      const y = height * node.y;
+      const radius = 10;
+
+      const selected = state.selectedNode === node.id;
+      const color = statusColor(node.status);
+
+      node.pulse += 0.025 * state.speed;
+
+      if (selected) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 9 + Math.sin(node.pulse) * 2, 0, Math.PI * 2);
+        ctx.strokeStyle = "#7ddcff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      if (node.status === "Fault") {
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 7 + Math.sin(node.pulse) * 3, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 70, 85, 0.6)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 14;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = "#d9edff";
+      ctx.font = "11px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(node.id, x, y - 19);
+
+      ctx.textAlign = "left";
+    }
+
+    function drawScene() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+
+      drawBackground(width, height);
+      drawMine(width, height);
+
+      state.nodes.forEach((node) => {
+        drawNode(node, width, height);
+      });
+
+      requestAnimationFrame(drawScene);
+    }
+
+    function findNodeAt(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      let closest = null;
+      let closestDistance = Infinity;
+
+      state.nodes.forEach((node) => {
+        const nodeX = rect.width * node.x;
+        const nodeY = rect.height * node.y;
+
+        const distance = Math.sqrt(
+          Math.pow(x - nodeX, 2) +
+          Math.pow(y - nodeY, 2)
+        );
+
+        if (distance < 25 && distance < closestDistance) {
+          closest = node;
+          closestDistance = distance;
+        }
+      });
+
+      return closest;
+    }
+
+    function updateTelemetry() {
+      state.time += 0.01 * state.speed;
+
+      state.nodes.forEach((node) => {
+        if (node.status === "Healthy") {
+          node.temperature +=
+            (26 + Math.sin(state.time + node.pulse) * 1.5 -
+              node.temperature) * 0.01;
+
+          node.gas +=
+            (0.4 + Math.sin(state.time * 0.5 + node.pulse) * 0.05 -
+              node.gas) * 0.01;
+
+          node.battery = Math.max(
+            70,
+            node.battery - 0.0005 * state.speed
+          );
+        }
+
+        if (state.scenario === "methane") {
+          node.gas += 0.0008 * state.speed;
+        }
+
+        if (state.scenario === "ventilation") {
+          node.temperature += 0.0015 * state.speed;
+          node.gas += 0.001 * state.speed;
+        }
+      });
+
+      updateMetrics();
+
+      const node = getSelectedNode();
+
+      if (node) {
+        updateSelectedPanel();
+        updatePopup();
+        positionPopup(node);
+      }
+    }
+
+    canvas.addEventListener("click", (event) => {
+      const node = findNodeAt(event.clientX, event.clientY);
+
+      if (node) {
+        selectNode(node);
       }
     });
-  }
 
-  controls.update();
-  renderer.render(scene, camera);
-}
+    $("simulate-fault-button").addEventListener("click", () => {
+      simulateFault(getSelectedNode());
+    });
 
-rendererClick = () => {};
+    $("repair-node-button").addEventListener("click", () => {
+      repairNode(getSelectedNode());
+    });
 
-addEventListener('pointerdown', event => {
-  if (event.target !== renderer.domElement) {
-    return;
-  }
+    $("close-popup-button").addEventListener("click", () => {
+      $("node-popup").classList.remove("visible");
+      state.selectedNode = null;
+      updateSelectedPanel();
+    });
 
-  mouse.x =
-    event.clientX / innerWidth * 2 - 1;
+    $("emergency-button").addEventListener(
+      "click",
+      activateEmergency
+    );
 
-  mouse.y =
-    -(event.clientY / innerHeight) * 2 + 1;
+    $("reset-button").addEventListener(
+      "click",
+      resetSimulation
+    );
 
-  raycaster.setFromCamera(mouse, camera);
+    $("run-scenario").addEventListener(
+      "click",
+      runScenario
+    );
 
-  const hits =
-    raycaster.intersectObjects(nodeObjects);
+    $("clear-scenario").addEventListener(
+      "click",
+      resetSimulation
+    );
 
-  if (hits.length) {
-    selectNode(hits[0].object.name);
-  }
-});
+    $("speed").addEventListener("change", (event) => {
+      state.speed = Number(event.target.value);
+      log(`Simulation speed changed to ${state.speed}×.`);
+    });
 
-$('typeFilter').addEventListener(
-  'change',
-  () => {
-    renderSectors();
-  }
-);
+    window.addEventListener("resize", resizeCanvas);
 
-$('allLevels').addEventListener(
-  'click',
-  () => {
-    fitView();
-  }
-);
+    createNodes();
+    resizeCanvas();
+    updateMetrics();
+    updateSelectedPanel();
+    log("Digital twin initialized successfully.", "success");
+    drawScene();
 
-$('surface').addEventListener(
-  'click',
-  () => {
-    controls.target.set(0, -30, 20);
-    camera.position.set(150, 100, 150);
-  }
-);
-
-$('underground').addEventListener(
-  'click',
-  () => {
-    controls.target.set(0, -20, -35);
-    camera.position.set(140, 70, 120);
-  }
-);
-
-$('labels').addEventListener(
-  'click',
-  () => {
-    toggleLabels();
-  }
-);
-
-addEventListener('resize', () => {
-  camera.aspect =
-    innerWidth / innerHeight;
-
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(
-    innerWidth,
-    innerHeight
-  );
-});
-
-init();
-</script>
-
+    setInterval(updateTelemetry, 500);
+  </script>
 </body>
 </html>
